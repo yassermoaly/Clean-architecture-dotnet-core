@@ -10,7 +10,11 @@ namespace Services
     {
         public static IServiceCollection RegisterServiceLayer(this IServiceCollection services)
         {
-            services.AddTransient<IBookService, BookService>();           
+            services.AddScoped<IBookService, BookService>();
+            services.AddScoped<ISecurityService, SecurityService>();
+            services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IMailService, MailService>();
+
             return services;
         }
     }

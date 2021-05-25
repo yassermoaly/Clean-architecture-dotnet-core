@@ -3,11 +3,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace DataAccessLayer.Interfaces
 {
     public interface IBooksRepository : IGenericRepository<Book>
     {
-        IQueryable<Book> GetBooksByGenre(string Genre);
+        Task<Book> GetBookById(Guid Id);
+        Task<List<Book>> GetAllBooks();
     }
 }

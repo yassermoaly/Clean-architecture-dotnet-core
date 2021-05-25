@@ -1,12 +1,14 @@
-﻿using APIs.ViewModels;
-using Microsoft.AspNetCore.Http;
+﻿using GlobalHelpers.Helpers;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using Models;
+using Services.Interfaces;
+using SharedConfig.Config;
+using SharedConfig.Messages;
+using Models.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,46 +19,60 @@ namespace APIs.Controllers
     [ApiController]
     public class AuthenticateController : ControllerBase
     {
-        private readonly IConfiguration _configuration;
-        public AuthenticateController(IConfiguration Configuration)
+        private readonly AppConfig _config;
+        private readonly IUserService _userService;
+        public AuthenticateController(AppConfig config, IUserService userService)
         {
-            this._configuration = Configuration;
+            _config = config;
+            _userService = userService;
         }
 
         [Route("login")]
         [HttpPost]
-        public VmLoginResponse Login(VmLoginRequest LoginRequest)
+        public async Task<IActionResult> Login([FromBody] VmLoginRequest LoginRequest)
         {
-            if(LoginRequest.UserName.Equals("admin") && LoginRequest.Password.Equals("admin"))
+            if (ModelState.IsValid)
             {
-                var authClaims = new List<Claim>
+                try
                 {
-                    new Claim(ClaimTypes.Name, "Yasser"),
-                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                };
+                    User user = await _userService.ValidateUserToLogin(LoginRequest.UserName, LoginRequest.Password);
+                    List<Claim> authClaims = new()
+                    {
+                        new Claim(ClaimTypes.Name, user.Username),
+                        new Claim(JwtRegisteredClaimNames.Jti, user.Id.ToString()),
+                        new Claim(ClaimTypes.Role, user.Role.ToString()),
+                    };
 
-                authClaims.Add(new Claim(ClaimTypes.Role, "Admin"));
-                authClaims.Add(new Claim(ClaimTypes.Role, "Manager"));
+                    SymmetricSecurityKey authSigningKey = new(Encoding.UTF8.GetBytes(_config.JWTConfig.Secret));
 
-                var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
+                    JwtSecurityToken token = new(
+                        issuer: _config.JWTConfig.ValidIssuer,
+                        audience: _config.JWTConfig.ValidAudience,
+                        expires: DateTime.Now.AddHours(_config.JWTConfig.Expires),
+                        claims: authClaims,
+                        signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
+                        );
 
-                var token = new JwtSecurityToken(
-                    issuer: _configuration["JWT:ValidIssuer"],
-                    audience: _configuration["JWT:ValidAudience"],
-                    expires: DateTime.Now.AddHours(3),
-                    claims: authClaims,
-                    signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
-                    );
+                    string JWTToken = new JwtSecurityTokenHandler().WriteToken(token);
 
-                return new VmLoginResponse()
+                    return Ok(DataMessage.Data(new VmLoginResponse()
+                    {
+                        Token = JWTToken
+                    }));
+                }
+                catch (AppException ex)
                 {
-                    Status = "Success",
-                    Token = new JwtSecurityTokenHandler().WriteToken(token)
-                };
+                    return BadRequest(ex.ReturnBadRequest());
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest(AppException.ReturnBadRequest(ex.Message));
+                }
             }
-
-            return new VmLoginResponse() { Status  = "InvalidLogin" };
-            
+            else
+            {
+                return BadRequest(AppException.ReturnBadRequest(ModelState));
+            }
         }
     }
 }

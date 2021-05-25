@@ -6,6 +6,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using DataAccessLayer;
+using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
+
 namespace Services
 {
     public class BookService : IBookService
@@ -15,9 +18,11 @@ namespace Services
         {
             this.UnitOfWork = UnitOfWork;
         }
-        public IQueryable<Book> GetAll()
+        public async Task<List<Book>> GetAll()
         {
-            return UnitOfWork.BooksRepository.Where(r => r.Id > 0);
+            List<Book> data = await UnitOfWork.BooksRepository.GetAllBooks();
+            // TODO: format data here before returning to controller
+            return data;
         }
     }
 }

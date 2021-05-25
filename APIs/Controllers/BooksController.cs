@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 using Models;
 using Services.Interfaces;
 using AutoMapper;
-using APIs.ViewModels;
 using Microsoft.AspNetCore.Authorization;
+using Models.ViewModels;
 
 namespace APIs.Controllers
 {
@@ -16,20 +16,20 @@ namespace APIs.Controllers
     [ApiController]
     public class BooksController : ControllerBase
     {
-        private readonly IMapper Mapper;
-        private readonly IBookService BookService;
+        private readonly IMapper _mapper;
+        private readonly IBookService _bookService;
         public BooksController(IMapper Mapper,IBookService BookService)
         {
-            this.Mapper = Mapper;
-            this.BookService = BookService;
+            this._mapper = Mapper;
+            this._bookService = BookService;
         }
 
         [HttpGet]
         [Route("GetAll")]
         [Authorize]
-        public List<VmBook> GetAll()
+        public async Task<List<VmBook>> GetAll()
         {
-            return Mapper.Map<List<VmBook>>(BookService.GetAll());
+            return _mapper.Map<List<VmBook>>(await _bookService.GetAll());
         }
     }
 }

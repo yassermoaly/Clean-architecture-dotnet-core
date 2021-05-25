@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Models;
+using SharedConfig.Config;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -10,11 +11,12 @@ namespace DataAccessLayer
 {
     public static class DependencyInjection
     {
-        public static IServiceCollection RegisterDataAccessLayer(this IServiceCollection services)
+        public static IServiceCollection RegisterDataAccessLayer(this IServiceCollection services, string connectionString)
         {
-            services.AddTransient<IBooksRepository, BooksRepository>();
-            services.AddTransient<IUnitOfWork, UnitOfWork>();          
-            services.AddDbContext<BooksDBContext>(options => options.UseSqlServer(@"Server=YASSER_MOLY1\SQLEXPRESS; Database=BooksDB;User Id=sa; Password=123456;"));
+            services.AddScoped<IBooksRepository, BooksRepository>();
+            services.AddScoped<IUsersRepository, UsersRepository>();
+            services.AddScoped<IUnitOfWork, UnitOfWork>();          
+            services.AddDbContext<DBContext>(options => options.UseSqlServer(connectionString));
             return services;
         }
     }

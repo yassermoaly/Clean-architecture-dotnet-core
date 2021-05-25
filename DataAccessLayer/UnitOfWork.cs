@@ -1,22 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using DataAccessLayer.Interfaces;
 namespace DataAccessLayer
 {
     public class UnitOfWork : IUnitOfWork
     {
+        public DBContext DBContext { get; }
         public IBooksRepository BooksRepository { get; }
-        public BooksDBContext BooksDBContext { get; }
-        public UnitOfWork(BooksDBContext BooksDBContext, IBooksRepository BooksRepository)
+        public IUsersRepository UsersRepository { get; }
+        public UnitOfWork(DBContext BooksDBContext, IBooksRepository BooksRepository, IUsersRepository UsersRepository)
         {
+            this.DBContext = BooksDBContext;
             this.BooksRepository = BooksRepository;
-            this.BooksDBContext = BooksDBContext;
+            this.UsersRepository = UsersRepository;
         }
 
-        public int SaveChanges()
+        public async Task<int> SaveChangesAsync()
         {
-            return this.BooksDBContext.SaveChanges();
+            return await DBContext.SaveChangesAsync();
         }
     }
 }
